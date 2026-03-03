@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { fetchLatestQuake } from './utils/api.js';
 import Dashboard from './pages/Dashboard.jsx';
@@ -78,19 +78,26 @@ export default function App() {
 
     useEffect(() => {
         let mounted = true;
+        const fetchUpdate = () => {
+            fetchLatestQuake()
+                .then(data => {
+                    if (mounted && data?.tanggal && data?.jam) {
+                        setLastUpdate(`${data.tanggal} ${data.jam}`);
+                    }
+                })
+                .catch(err => {
+                    if (mounted) setLastUpdate('Data Gagal Dimuat');
+                    console.error(err);
+                });
+        };
 
-        fetchLatestQuake()
-            .then(data => {
-                if (mounted && data?.tanggal && data?.jam) {
-                    setLastUpdate(`${data.tanggal} ${data.jam}`);
-                }
-            })
-            .catch(err => {
-                if (mounted) setLastUpdate('Data Gagal Dimuat');
-                console.error(err);
-            });
+        fetchUpdate();
+        const liveInterval = setInterval(fetchUpdate, 60_000);
 
-        return () => { mounted = false; };
+        return () => {
+            mounted = false;
+            clearInterval(liveInterval);
+        };
     }, []);
 
     useEffect(() => {
